@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: personal-auto-insurance
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://iamstaging.the-grydd.com/tenants/d9c7d81d-1ec3-4794-88d1-e433f814db4f
+          audiences: api://8f28d3f7a4324128b077157ba76da99f
+      client:
+        registration:
+          grydd:
+            client-id: 9e5dd54c-784d-4536-a4c3-6d2842ac3d21
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/auto-insurance
+    username: postgres
+    password: nisarg@0926
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
