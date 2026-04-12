@@ -1,23 +1,11 @@
 package com.onerivet.dto;
 
-import lombok.Builder;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
- @Builder
+@AllArgsConstructor
 public class CoverageResponseDto {
-	
-	 private Integer coverageId;
-	    private String coverageName;
-
-//    private Integer coverageTypeCatalogId;
-//    private String coverageName;
-//
-//    private BigDecimal bodilyInjuredLimitPerPerson;
-//    private BigDecimal bodilyInjuredLimitPerAccident;
-//    private BigDecimal propertyDamageLimit;
-//    private BigDecimal combinedLimit;
-//
-//    private List<String> components;
-//    private List<String> addOns;
+    private Integer coverageId;
+    private String coverageName;
 }

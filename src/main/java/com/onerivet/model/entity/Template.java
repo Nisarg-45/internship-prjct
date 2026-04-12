@@ -55,78 +55,7 @@ public class Template {
     @Column(name = "[DeletedDate]")
     private LocalDateTime deletedDate;
 
-	public Integer getTemplateId() {
-		return templateId;
-	}
-
-	public void setTemplateId(Integer templateId) {
-		this.templateId = templateId;
-	}
-
-	public String getTemplateName() {
-		return templateName;
-	}
-
-	public void setTemplateName(String templateName) {
-		this.templateName = templateName;
-	}
-
-	public VehicleType getVehicleType() {
-		return vehicleType;
-	}
-
-	public void setVehicleType(VehicleType vehicleType) {
-		this.vehicleType = vehicleType;
-	}
-
-	public Status getStatus() {
-		return status;
-	}
-
-	public void setStatus(Status status) {
-		this.status = status;
-	}
-
-	public String getCreatedById() {
-		return createdById;
-	}
-
-	public void setCreatedById(String createdById) {
-		this.createdById = createdById;
-	}
-
-	public LocalDateTime getCreatedDate() {
-		return createdDate;
-	}
-
-	public void setCreatedDate(LocalDateTime createdDate) {
-		this.createdDate = createdDate;
-	}
-
-	public String getModifiedById() {
-		return modifiedById;
-	}
-
-	public void setModifiedById(String modifiedById) {
-		this.modifiedById = modifiedById;
-	}
-
-	public LocalDateTime getModifiedDate() {
-		return modifiedDate;
-	}
-
-	public void setModifiedDate(LocalDateTime modifiedDate) {
-		this.modifiedDate = modifiedDate;
-	}
-
-	public LocalDateTime getDeletedDate() {
-		return deletedDate;
-	}
-
-	public void setDeletedDate(LocalDateTime deletedDate) {
-		this.deletedDate = deletedDate;
-	}
-
+	
 	
     
     

@@ -24,7 +24,6 @@ public class TemplateCoverage {
     @Column(name = "[TemplateCoverageId]")
     private String templateCoverageId;
 
-    // 🔗 MANY TemplateCoverage → ONE TemplatePlan
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "[TemplatePlanId]", nullable = false)
     private TemplatePlan templatePlan;
@@ -32,7 +31,7 @@ public class TemplateCoverage {
     @Column(name = "[CoverageTypeCatalogId]")
     private Integer coverageTypeCatalogId;
 
-    // 🔢 Numeric fields
+
     @Column(name = "[BodilyInjuredLimitPerPerson]")
     private BigDecimal bodilyInjuredLimitPerPerson;
 

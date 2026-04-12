@@ -6,6 +6,5 @@ import lombok.Data;
 
 @Data
 public class TemplatePlanRequestDto {
-
     private List<Integer> planIds;
 }

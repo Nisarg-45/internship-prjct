@@ -43,12 +43,11 @@ public class User {
     @Column(name = "[Address]", nullable = false)
     private String address;
 
-    // 🔗 MANY USERS → ONE GENDER
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "[GenderId]", nullable = false)
     private Gender Gender;
 
-    // 🔗 MANY USERS → ONE ROLE
+ 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "[RoleId]", nullable = false)
     private Role Role;
