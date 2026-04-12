@@ -10,10 +10,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.onerivet.dto.CoverageComponentResponseDto;
+import com.onerivet.dto.CoverageResponseDto;
+import com.onerivet.dto.CoverageTypeResponseDto;
 import com.onerivet.dto.PremiumResponseDto;
 import com.onerivet.dto.TemplateCoverageListRequestDto;
-import com.onerivet.dto.TemplateFullResponseDto;
-import com.onerivet.dto.TemplatePlanRequestDto;
 import com.onerivet.dto.TemplateRequestDto;
 import com.onerivet.dto.TemplateResponseDto;
 import com.onerivet.service.AddOnService;
@@ -25,7 +26,7 @@ import com.onerivet.service.TemplateService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/templates")
+@RequestMapping("/api/v1")
 @RequiredArgsConstructor
 public class TemplateController {
 
@@ -35,6 +36,8 @@ public class TemplateController {
     private final CoverageComponentService componentService;
     private final AddOnService addOnService;
 
+    
+
     // 🔹 1. Create Template
     @PostMapping
     public TemplateResponseDto createTemplate(@RequestBody TemplateRequestDto request) {
@@ -42,15 +45,23 @@ public class TemplateController {
     }
 
     // 🔹 2. Add Plans
-    @PostMapping("/{templateId}/plans")
-    public String addPlansToTemplate(
-            @PathVariable Integer templateId,
-            @RequestBody TemplatePlanRequestDto request) {
+   // @PostMapping("/{templateId}/plans")
+//    public String addPlansToTemplate(
+//            @PathVariable Integer templateId,
+//            @RequestBody TemplatePlanRequestDto request) {
+//
+//        templatePlanService.addPlansToTemplate(templateId, request.getPlanIds());
+//        return "Plans added successfully";
+//    }
 
-        templatePlanService.addPlansToTemplate(templateId, request.getPlanIds());
-        return "Plans added successfully";
+    
+    @GetMapping("/template-plans/{templatePlanId}/coverages")
+    public List<CoverageResponseDto> getCoverages(
+            @PathVariable Integer templatePlanId) {
+
+        return templateService.getCoveragesByTemplatePlan(templatePlanId);
     }
-
+    
     // 🔹 3. Add Coverages
     @PostMapping("/template-plans/{templatePlanId}/coverages")
     public String addCoveragesToTemplate(
@@ -61,11 +72,23 @@ public class TemplateController {
         return "Coverages added successfully";
     }
 
-    // 🔹 4. Get Components
-    @GetMapping("/coverage-type/{id}/components")
-    public List<String> getComponents(@PathVariable Integer id) {
-        return componentService.getComponentNames(id);
+    @GetMapping("/coverages/{coverageId}/types")
+    public List<CoverageTypeResponseDto> getCoverageTypes(
+            @PathVariable Integer coverageId) {
+
+        return templateService.getCoverageTypes(coverageId);
     }
+    @GetMapping("/coverage-types/{coverageTypeId}/components")
+    public List<CoverageComponentResponseDto> getComponents(
+            @PathVariable Integer coverageTypeId) {
+
+        return templateService.getComponentsByCoverageType(coverageTypeId);
+    }
+    // 🔹 4. Get Components
+//    @GetMapping("/coverage-type/{id}/components")
+//    public List<String> getComponents(@PathVariable Integer id) {
+//        return componentService.getComponentNames(id);
+//    }
 
     // 🔹 5. Get AddOns
     @GetMapping("/add-ons")
@@ -76,11 +99,7 @@ public class TemplateController {
         return addOnService.getAddOnNames(vehicleTypeId, coverageId);
     }
 
-    // 🔹 6. Full Template API
-    @GetMapping("/{templateId}/full")
-    public TemplateFullResponseDto getFullTemplate(@PathVariable Integer templateId) {
-        return templateService.getFullTemplate(templateId);
-    }
+   
     
     @GetMapping("/{templateId}/premium")
     public PremiumResponseDto calculatePremium(@PathVariable Integer templateId) {

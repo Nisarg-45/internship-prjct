@@ -1,37 +1,47 @@
 package com.onerivet.service;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.onerivet.dto.CoverageComponentResponseDto;
 import com.onerivet.dto.CoverageResponseDto;
+import com.onerivet.dto.CoverageTypeResponseDto;
 import com.onerivet.dto.PlanResponseDto;
 import com.onerivet.dto.PremiumResponseDto;
-import com.onerivet.dto.TemplateFullResponseDto;
 import com.onerivet.dto.TemplateRequestDto;
 import com.onerivet.dto.TemplateResponseDto;
 import com.onerivet.model.entity.Coverage;
+import com.onerivet.model.entity.CoverageComponent;
+import com.onerivet.model.entity.CoverageComponentCatalog;
+import com.onerivet.model.entity.CoverageType;
 import com.onerivet.model.entity.CoverageTypeCatalog;
+import com.onerivet.model.entity.Plan;
 import com.onerivet.model.entity.Status;
 import com.onerivet.model.entity.Template;
 import com.onerivet.model.entity.TemplateCoverage;
 import com.onerivet.model.entity.TemplatePlan;
 import com.onerivet.model.entity.VehicleType;
+import com.onerivet.repository.CoverageComponentCatalogRepository;
+import com.onerivet.repository.CoverageComponentRepository;
 import com.onerivet.repository.CoverageRepository;
 import com.onerivet.repository.CoverageTypeCatalogRepository;
+import com.onerivet.repository.CoverageTypeRepository;
 import com.onerivet.repository.StatusRepository;
 import com.onerivet.repository.TemplateCoverageRepository;
 import com.onerivet.repository.TemplatePlanRepository;
-import com.onerivet.repository.TemplateRepo;
+import com.onerivet.repository.TemplateRepopository;
 import com.onerivet.repository.VehicleTypeRepository;
 
 @Service
 public class TemplateService {
 
     @Autowired
-    private TemplateRepo templateRepository;
+    private TemplateRepopository templateRepository;
 
     @Autowired
     private VehicleTypeRepository vehicleTypeRepository;
@@ -59,6 +69,123 @@ public class TemplateService {
     
     @Autowired
     private PricingService pricingService;
+    
+    @Autowired
+    private CoverageTypeRepository coverageTypeRepository;
+    
+    @Autowired
+private CoverageComponentCatalogRepository coverageComponentCatalogRepository;
+    
+    @Autowired
+    private CoverageComponentRepository coverageComponentRepository;
+    
+    public List<CoverageResponseDto> getCoveragesByTemplatePlan(Integer templatePlanId) {
+
+        // 1. Get TemplatePlan
+        TemplatePlan templatePlan = templatePlanRepository.findById(templatePlanId)
+                .orElseThrow(() -> new RuntimeException("TemplatePlan not found"));
+
+        // 2. Get TemplateCoverages
+        List<TemplateCoverage> templateCoverages =
+                templateCoverageRepository.findByTemplatePlan(templatePlan);
+
+        Map<Integer, CoverageResponseDto> map = new LinkedHashMap<>();
+
+        // 3. Loop
+        for (TemplateCoverage tc : templateCoverages) {
+
+            // 4. Get CoverageTypeCatalog
+            CoverageTypeCatalog typeCatalog =
+                    coverageTypeCatalogRepository.findById(tc.getCoverageTypeCatalogId())
+                            .orElseThrow(() -> new RuntimeException("Invalid CoverageTypeCatalog"));
+
+            // 5. Get Coverage
+            Coverage coverage =
+                    coverageRepository.findById(typeCatalog.getCoverageId())
+                            .orElseThrow(() -> new RuntimeException("Coverage not found"));
+
+         
+            
+        }
+
+        return new ArrayList<>(map.values());
+    }
+    
+    public List<CoverageTypeResponseDto> getCoverageTypes(Integer coverageId) {
+
+        List<CoverageTypeCatalog> catalogs =
+                coverageTypeCatalogRepository.findByCoverageId(coverageId);
+
+        List<CoverageTypeResponseDto> result = new ArrayList<>();
+
+        for (CoverageTypeCatalog ctc : catalogs) {
+
+            CoverageType type = coverageTypeRepository.findById(ctc.getCoverageTypeId())
+                    .orElseThrow(() -> new RuntimeException("CoverageType not found"));
+
+            CoverageTypeResponseDto dto =
+                    new CoverageTypeResponseDto(type.getCoverageTypeId(), type.getCoverageType());
+
+            result.add(dto);
+        }
+
+        return result;
+    }
+    public List<PlanResponseDto> getPlansByVehicleType(Integer vehicleTypeId) {
+
+        VehicleType vehicleType = vehicleTypeRepository.findById(vehicleTypeId)
+                .orElseThrow(() -> new RuntimeException("VehicleType not found"));
+
+        List<Template> templates = templateRepository.findByVehicleType(vehicleType);
+
+        List<PlanResponseDto> result = new ArrayList<>();
+
+        for (Template template : templates) {
+
+            List<TemplatePlan> templatePlans =
+                    templatePlanRepository.findByTemplate(template);
+
+            for (TemplatePlan tp : templatePlans) {
+
+                Plan plan = tp.getPlan();
+
+                PlanResponseDto dto = PlanResponseDto.builder()
+                        .planId(plan.getPlanId())
+                        .planName(plan.getPlan())
+                        //.coverages(null)
+                        .build();
+
+                result.add(dto);
+            }
+        }
+
+        return result;
+    }
+    
+    public List<CoverageComponentResponseDto> getComponentsByCoverageType(Integer coverageTypeId) {
+
+        List<CoverageComponentCatalog> catalogs =
+                coverageComponentCatalogRepository.findByCoverageTypeId(coverageTypeId);
+
+        List<CoverageComponentResponseDto> result = new ArrayList<>();
+
+        for (CoverageComponentCatalog ccc : catalogs) {
+
+            CoverageComponent component =
+                    coverageComponentRepository.findById(ccc.getCoverageComponentId())
+                            .orElseThrow(() -> new RuntimeException("Component not found"));
+
+            CoverageComponentResponseDto dto =
+                    new CoverageComponentResponseDto(
+                            component.getCoverageComponentId(),
+                            component.getComponent()
+                    );
+
+            result.add(dto);
+        }
+
+        return result;
+    }
 
     public TemplateResponseDto createTemplate(TemplateRequestDto request) {
 
@@ -83,72 +210,7 @@ public class TemplateService {
                 .build();
     }
 
-    public TemplateFullResponseDto getFullTemplate(Integer templateId) {
-
-        Template template = templateRepository.findById(templateId)
-                .orElseThrow(() -> new RuntimeException("Template not found"));
-
-        List<TemplatePlan> templatePlans = templatePlanRepository.findByTemplate(template);
-
-        List<PlanResponseDto> planDtos = new ArrayList<>();
-
-        for (TemplatePlan tp : templatePlans) {
-
-            List<TemplateCoverage> coverages =
-                    templateCoverageRepository.findByTemplatePlan(tp);
-
-            List<CoverageResponseDto> coverageDtos = new ArrayList<>();
-
-            for (TemplateCoverage tc : coverages) {
-
-                CoverageTypeCatalog typeCatalog =
-                        coverageTypeCatalogRepository.findById(tc.getCoverageTypeCatalogId())
-                                .orElseThrow();
-
-                Coverage coverage =
-                        coverageRepository.findById(typeCatalog.getCoverageId())
-                                .orElseThrow();
-
-                List<String> components =
-                        componentService.getComponentNames(tc.getCoverageTypeCatalogId());
-
-                List<String> addOns =
-                        addOnService.getAddOnNames(
-                                template.getVehicleType().getVehicleTypeId(),
-                                typeCatalog.getCoverageId()
-                        );
-
-                CoverageResponseDto dto = CoverageResponseDto.builder()
-                        .coverageTypeCatalogId(tc.getCoverageTypeCatalogId())
-                        .coverageName(coverage.getCoverage())
-                        .bodilyInjuredLimitPerPerson(tc.getBodilyInjuredLimitPerPerson())
-                        .bodilyInjuredLimitPerAccident(tc.getBodilyInjuredLimitPerAccident())
-                        .propertyDamageLimit(tc.getPropertyDamageLimit())
-                        .combinedLimit(tc.getCombinedLimit())
-                        .components(components)
-                        .addOns(addOns)
-                        .build();
-
-                coverageDtos.add(dto);
-            }
-
-            PlanResponseDto planDto = PlanResponseDto.builder()
-                    .planId(tp.getPlan().getPlanId())
-                    .planName(tp.getPlan().getPlan())
-                    .coverages(coverageDtos)
-                    .build();
-
-            planDtos.add(planDto);
-        }
-
-        return TemplateFullResponseDto.builder()
-                .templateId(template.getTemplateId())
-                .templateName(template.getTemplateName())
-                .vehicleType(template.getVehicleType().getVehicle())
-                .plans(planDtos)
-                .build();
-    }
-    
+        
     public PremiumResponseDto calculatePremium(Integer templateId) {
 
         Template template = templateRepository.findById(templateId)
@@ -211,4 +273,7 @@ public class TemplateService {
 
         return premium;
     }
+
+
+	
 }
