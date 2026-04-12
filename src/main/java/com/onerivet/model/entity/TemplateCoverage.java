@@ -1,5 +1,6 @@
 package com.onerivet.model.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
@@ -14,25 +15,48 @@ import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
-@Table(name = "[TemplateCoverage]", schema = "[Template]") // adjust schema if needed
+@Table(name = "[TemplateCoverage]", schema = "[Template]")
 @Data
 public class TemplateCoverage {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "[TemplateCoverageId]")
-    private Integer templateCoverageId;
+    private String templateCoverageId;
 
-    // 🔗 MANY TemplateCoverage → ONE Template
+    // 🔗 MANY TemplateCoverage → ONE TemplatePlan
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "[TemplateId]", nullable = false)
-    private Template template;
+    @JoinColumn(name = "[TemplatePlanId]", nullable = false)
+    private TemplatePlan templatePlan;
+    
+    @Column(name = "[CoverageTypeCatalogId]")
+    private Integer coverageTypeCatalogId;
 
-    // 🔗 MANY TemplateCoverage → ONE Coverage
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "[CoverageId]", nullable = false)
-    private Coverage coverage;
+    // 🔢 Numeric fields
+    @Column(name = "[BodilyInjuredLimitPerPerson]")
+    private BigDecimal bodilyInjuredLimitPerPerson;
 
-    @Column(name = "[CreatedDate]")
+    @Column(name = "[BodilyInjuredLimitPerAccident]")
+    private BigDecimal bodilyInjuredLimitPerAccident;
+
+    @Column(name = "[PropertyDamageLimit]")
+    private BigDecimal propertyDamageLimit;
+
+    @Column(name = "[CombinedLimit]")
+    private BigDecimal combinedLimit;
+
+    @Column(name = "[CreatedById]")
+    private String createdById;
+
+    @Column(name = "[CreatedDate]", nullable = false)
     private LocalDateTime createdDate;
+
+    @Column(name = "[ModifiedById]")
+    private String modifiedById;
+
+    @Column(name = "[ModifiedDate]")
+    private LocalDateTime modifiedDate;
+
+    @Column(name = "[DeletedDate]")
+    private LocalDateTime deletedDate;
 }
