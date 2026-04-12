@@ -1,30 +1,26 @@
 package com.onerivet.service;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.onerivet.dto.TemplateCoverageListRequestDto;
-import com.onerivet.dto.TemplateCoverageRequestDto;
+import com.onerivet.dto.CoverageResponseDto;
+import com.onerivet.dto.PlanResponseDto;
+import com.onerivet.dto.PremiumResponseDto;
+import com.onerivet.dto.TemplateFullResponseDto;
 import com.onerivet.dto.TemplateRequestDto;
 import com.onerivet.dto.TemplateResponseDto;
-import com.onerivet.model.entity.CoverageComponent;
-import com.onerivet.model.entity.CoverageComponentCatalog;
+import com.onerivet.model.entity.Coverage;
 import com.onerivet.model.entity.CoverageTypeCatalog;
-import com.onerivet.model.entity.Plan;
 import com.onerivet.model.entity.Status;
 import com.onerivet.model.entity.Template;
 import com.onerivet.model.entity.TemplateCoverage;
 import com.onerivet.model.entity.TemplatePlan;
 import com.onerivet.model.entity.VehicleType;
-import com.onerivet.repository.CoverageComponentCatalogRepository;
-import com.onerivet.repository.CoverageComponentRepository;
 import com.onerivet.repository.CoverageRepository;
 import com.onerivet.repository.CoverageTypeCatalogRepository;
-import com.onerivet.repository.PlanRepository;
 import com.onerivet.repository.StatusRepository;
 import com.onerivet.repository.TemplateCoverageRepository;
 import com.onerivet.repository.TemplatePlanRepository;
@@ -32,139 +28,187 @@ import com.onerivet.repository.TemplateRepo;
 import com.onerivet.repository.VehicleTypeRepository;
 
 @Service
-
-
 public class TemplateService {
 
-	@Autowired
-	private TemplateRepo templateRepository;
-	
-	@Autowired
-	private VehicleTypeRepository vehicleTypeRepository;
-	
-	@Autowired
-	private StatusRepository statusRepository;
-	
-	@Autowired
-	private PlanRepository planRepository;
-	
-	@Autowired
-	
-	private TemplatePlanRepository templatePlanRepository;
-	
-	@Autowired
-	private CoverageRepository coverageRepository;
-	
-	@Autowired
-	private TemplateCoverageRepository templateCoverageRepository;
-	
-	@Autowired
-	private CoverageTypeCatalogRepository coverageTypeCatalogRepository;
-	
-	@Autowired
-	private CoverageComponentCatalogRepository coverageComponentCatalogRepository;
-	
-	@Autowired
-	private CoverageComponentRepository coverageComponentRepository;
-	
-	public TemplateResponseDto createTemplate(TemplateRequestDto request) {
+    @Autowired
+    private TemplateRepo templateRepository;
 
-	    
-		VehicleType vehicleType = vehicleTypeRepository.findById(request.getVehicleTypeId())
-	            .orElseThrow(() -> new RuntimeException("VehicleType not found"));
+    @Autowired
+    private VehicleTypeRepository vehicleTypeRepository;
 
-	    Status status = statusRepository.findById(1) // DRAFT
-	            .orElseThrow(() -> new RuntimeException("Status not found"));
+    @Autowired
+    private StatusRepository statusRepository;
 
-	    Template template = new Template();
-	    template.setTemplateName(request.getTemplateName());
-	    template.setVehicleType(vehicleType);
-	    template.setStatus(status);
-	    template.setCreatedDate(LocalDateTime.now());
+    @Autowired
+    private TemplatePlanRepository templatePlanRepository;
 
-	    Template saved = templateRepository.save(template);
+    @Autowired
+    private TemplateCoverageRepository templateCoverageRepository;
 
-	    // 🔥 Convert Entity → ResponseDTO
-	    return TemplateResponseDto.builder()
-	            .templateId(saved.getTemplateId())
-	            .templateName(saved.getTemplateName())
-	            .vehicleType(saved.getVehicleType().getVehicle())
-	            .status(saved.getStatus().getStatus())
-	            .createdDate(saved.getCreatedDate())
-	            .build();
-	}
-	
-	
-	public void addPlansToTemplate(Integer templateId, List<Integer> planIds) {
+    @Autowired
+    private CoverageRepository coverageRepository;
 
-	    // 1. Get Template
-	    Template template = templateRepository.findById(templateId)
-	            .orElseThrow(() -> new RuntimeException("Template not found"));
+    @Autowired
+    private CoverageTypeCatalogRepository coverageTypeCatalogRepository;
 
-	    for (Integer planId : planIds) {
+    @Autowired
+    private CoverageComponentService componentService;
 
-	        // 2. Get Plan
-	        Plan plan = planRepository.findById(planId)
-	                .orElseThrow(() -> new RuntimeException("Plan not found"));
+    @Autowired
+    private AddOnService addOnService;
+    
+    @Autowired
+    private PricingService pricingService;
 
-	        // 3. Create TemplatePlan
-	        TemplatePlan templatePlan = new TemplatePlan();
-	        templatePlan.setTemplate(template);
-	        templatePlan.setPlan(plan);
-	        templatePlan.setCreatedDate(LocalDateTime.now());
+    public TemplateResponseDto createTemplate(TemplateRequestDto request) {
 
-	        // 4. Save
-	        templatePlanRepository.save(templatePlan);
-	    }
-	}
-	
-	public void addCoveragesToTemplate(Integer templatePlanId, TemplateCoverageListRequestDto request) {
+        VehicleType vehicleType = vehicleTypeRepository.findById(request.getVehicleTypeId())
+                .orElseThrow(() -> new RuntimeException("VehicleType not found"));
 
-	    TemplatePlan templatePlan = templatePlanRepository.findById(templatePlanId)
-	            .orElseThrow(() -> new RuntimeException("TemplatePlan not found"));
+        Status status = statusRepository.findById(1)
+                .orElseThrow(() -> new RuntimeException("Status not found"));
 
-	    for (TemplateCoverageRequestDto req : request.getCoverages()) {
+        Template template = new Template();
+        template.setTemplateName(request.getTemplateName());
+        template.setVehicleType(vehicleType);
+        template.setStatus(status);
 
-	        TemplateCoverage tc = new TemplateCoverage();
+        Template saved = templateRepository.save(template);
 
-	        tc.setTemplatePlan(templatePlan);
-	        tc.setCoverageTypeCatalogId(req.getCoverageTypeCatalogId());
-	        tc.setCreatedDate(LocalDateTime.now());
+        return TemplateResponseDto.builder()
+                .templateId(saved.getTemplateId())
+                .templateName(saved.getTemplateName())
+                .vehicleType(saved.getVehicleType().getVehicle())
+                .status(saved.getStatus().getStatus())
+                .build();
+    }
 
-	        // Liability fields (optional)
-	        tc.setBodilyInjuredLimitPerPerson(req.getBodilyInjuredLimitPerPerson());
-	        tc.setBodilyInjuredLimitPerAccident(req.getBodilyInjuredLimitPerAccident());
-	        tc.setPropertyDamageLimit(req.getPropertyDamageLimit());
-	        tc.setCombinedLimit(req.getCombinedLimit());
+    public TemplateFullResponseDto getFullTemplate(Integer templateId) {
 
-	        templateCoverageRepository.save(tc);
-	    }
-	}
-	
+        Template template = templateRepository.findById(templateId)
+                .orElseThrow(() -> new RuntimeException("Template not found"));
 
-	
-	public List<CoverageComponent> getComponentsByCoverageTypeCatalogId(Integer coverageTypeCatalogId) {
+        List<TemplatePlan> templatePlans = templatePlanRepository.findByTemplate(template);
 
-	    // 1. Get coverage type
-	    CoverageTypeCatalog typeCatalog = coverageTypeCatalogRepository
-	            .findById(coverageTypeCatalogId)
-	            .orElseThrow(() -> new RuntimeException("Invalid coverage type"));
+        List<PlanResponseDto> planDtos = new ArrayList<>();
 
-	    Integer coverageTypeId = typeCatalog.getCoverageTypeId();
+        for (TemplatePlan tp : templatePlans) {
 
-	    // 2. Get allowed components
-	    List<CoverageComponentCatalog> componentCatalogs =
-	            coverageComponentCatalogRepository.findByCoverageTypeId(coverageTypeId);
+            List<TemplateCoverage> coverages =
+                    templateCoverageRepository.findByTemplatePlan(tp);
 
-	    List<CoverageComponent> components = new ArrayList<>();
+            List<CoverageResponseDto> coverageDtos = new ArrayList<>();
 
-	    for (CoverageComponentCatalog ccc : componentCatalogs) {
-	        CoverageComponent component = coverageComponentRepository
-	                .findById(ccc.getCoverageComponentId())
-	                .orElseThrow();
-	        components.add(component);
-	    }
+            for (TemplateCoverage tc : coverages) {
 
-	    return components;
-	}
+                CoverageTypeCatalog typeCatalog =
+                        coverageTypeCatalogRepository.findById(tc.getCoverageTypeCatalogId())
+                                .orElseThrow();
+
+                Coverage coverage =
+                        coverageRepository.findById(typeCatalog.getCoverageId())
+                                .orElseThrow();
+
+                List<String> components =
+                        componentService.getComponentNames(tc.getCoverageTypeCatalogId());
+
+                List<String> addOns =
+                        addOnService.getAddOnNames(
+                                template.getVehicleType().getVehicleTypeId(),
+                                typeCatalog.getCoverageId()
+                        );
+
+                CoverageResponseDto dto = CoverageResponseDto.builder()
+                        .coverageTypeCatalogId(tc.getCoverageTypeCatalogId())
+                        .coverageName(coverage.getCoverage())
+                        .bodilyInjuredLimitPerPerson(tc.getBodilyInjuredLimitPerPerson())
+                        .bodilyInjuredLimitPerAccident(tc.getBodilyInjuredLimitPerAccident())
+                        .propertyDamageLimit(tc.getPropertyDamageLimit())
+                        .combinedLimit(tc.getCombinedLimit())
+                        .components(components)
+                        .addOns(addOns)
+                        .build();
+
+                coverageDtos.add(dto);
+            }
+
+            PlanResponseDto planDto = PlanResponseDto.builder()
+                    .planId(tp.getPlan().getPlanId())
+                    .planName(tp.getPlan().getPlan())
+                    .coverages(coverageDtos)
+                    .build();
+
+            planDtos.add(planDto);
+        }
+
+        return TemplateFullResponseDto.builder()
+                .templateId(template.getTemplateId())
+                .templateName(template.getTemplateName())
+                .vehicleType(template.getVehicleType().getVehicle())
+                .plans(planDtos)
+                .build();
+    }
+    
+    public PremiumResponseDto calculatePremium(Integer templateId) {
+
+        Template template = templateRepository.findById(templateId)
+                .orElseThrow(() -> new RuntimeException("Template not found"));
+
+        List<TemplatePlan> templatePlans =
+                templatePlanRepository.findByTemplate(template);
+
+        double liability = 0;
+        double collision = 0;
+        double comprehensive = 0;
+        double addOn = 0;
+
+        for (TemplatePlan tp : templatePlans) {
+
+            List<TemplateCoverage> coverages =
+                    templateCoverageRepository.findByTemplatePlan(tp);
+
+            for (TemplateCoverage tc : coverages) {
+
+                // 🔹 Get CoverageTypeCatalog
+                CoverageTypeCatalog typeCatalog =
+                        coverageTypeCatalogRepository.findById(tc.getCoverageTypeCatalogId())
+                                .orElseThrow();
+
+                // 🔹 Get Coverage
+                Coverage coverage =
+                        coverageRepository.findById(typeCatalog.getCoverageId())
+                                .orElseThrow();
+
+                // 🔥 PREMIUM LOGIC START
+
+                if (coverage.getCoverage().equals("Liability")) {
+                    liability += pricingService.calculateLiability(tc);
+                }
+
+                if (coverage.getCoverage().equals("Collision")) {
+                    collision += pricingService.calculateCollision(tc.getCoverageTypeCatalogId());
+                }
+
+                if (coverage.getCoverage().equals("Comprehensive")) {
+                    comprehensive += pricingService.calculateComprehensive(tc.getCoverageTypeCatalogId());
+                }
+
+                addOn += pricingService.calculateAddOns(
+                        template.getVehicleType().getVehicleTypeId(),
+                        typeCatalog.getCoverageId()
+                );
+            }
+        }
+
+        // 🔹 FINAL RESPONSE
+        PremiumResponseDto premium = new PremiumResponseDto();
+
+        premium.setLiabilityPremium(liability);
+        premium.setCollisionPremium(collision);
+        premium.setComprehensivePremium(comprehensive);
+        premium.setAddOnPremium(addOn);
+        premium.setTotalPremium(liability + collision + comprehensive + addOn);
+
+        return premium;
+    }
 }
