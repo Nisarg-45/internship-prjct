@@ -12,6 +12,8 @@ import com.onerivet.dto.CoverageComponentResponseDto;
 import com.onerivet.dto.CoverageResponseDto;
 import com.onerivet.dto.CoverageTypeResponseDto;
 import com.onerivet.dto.PlanResponseDto;
+import com.onerivet.dto.PricingResponseDto;
+import com.onerivet.dto.TemplateCoverageRequestDto;
 import com.onerivet.dto.VehicleTypeResponseDto;
 import com.onerivet.model.entity.Coverage;
 import com.onerivet.model.entity.CoverageComponent;
@@ -153,4 +155,90 @@ public class TemplateService {
 
 		return result;
 	}
+	
+	public void addPlansToTemplate(Integer templateId, List<Integer> planIds) {
+		
+		Template template = templateRepository.findById(templateId)
+	            .orElseThrow(() -> new RuntimeException("Template not found"));
+		
+		for (Integer planId : planIds) {
+
+	        Plan plan = planRepository.findById(planId)
+	                .orElseThrow(() -> new RuntimeException("Plan not found"));
+
+	        TemplatePlan tp = new TemplatePlan();
+	        tp.setTemplate(template);
+	        tp.setPlan(plan);
+	        tp.setCreatedDate(java.time.LocalDateTime.now());
+
+	        templatePlanRepository.save(tp);
+	    }
+	}
+	
+	public void addCoverages(Integer templatePlanId, List<TemplateCoverageRequestDto> coverages) {
+
+	    TemplatePlan templatePlan = templatePlanRepository.findById(templatePlanId)
+	            .orElseThrow(() -> new RuntimeException("TemplatePlan not found"));
+
+	    for (TemplateCoverageRequestDto req : coverages) {
+
+	        TemplateCoverage tc = new TemplateCoverage();
+
+	        tc.setTemplatePlan(templatePlan);
+	        tc.setCoverageTypeCatalogId(req.getCoverageTypeCatalogId());
+	        tc.setCreatedDate(java.time.LocalDateTime.now());
+
+	        templateCoverageRepository.save(tc);
+	    }
+	}
+	
+	public PricingResponseDto calculatePrice(Integer templatePlanId) {
+
+	    TemplatePlan templatePlan = templatePlanRepository.findById(templatePlanId)
+	            .orElseThrow(() -> new RuntimeException("TemplatePlan not found"));
+
+	    List<TemplateCoverage> coverages =
+	            templateCoverageRepository.findByTemplatePlan(templatePlan);
+
+	    double liability = 0;
+	    double collision = 0;
+	    double comprehensive = 0;
+
+	    for (TemplateCoverage tc : coverages) {
+
+	        CoverageTypeCatalog catalog =
+	                coverageTypeCatalogRepository.findById(tc.getCoverageTypeCatalogId())
+	                        .orElseThrow();
+
+	        Coverage coverage =
+	                coverageRepository.findById(catalog.getCoverageId())
+	                        .orElseThrow();
+
+	        String name = coverage.getCoverage();
+
+
+	        if ("Liability".equalsIgnoreCase(name)) {
+
+	            double bi = tc.getBodilyInjuredLimitPerPerson() != null ?
+	                    tc.getBodilyInjuredLimitPerPerson().doubleValue() : 0;
+
+	            double pd = tc.getPropertyDamageLimit() != null ?
+	                    tc.getPropertyDamageLimit().doubleValue() : 0;
+
+	            liability += (bi * 0.01) + (pd * 0.02);
+	        }
+
+	        else if ("Collision".equalsIgnoreCase(name)) {
+	            collision += 500;
+	        }
+
+	        else if ("Comprehensive".equalsIgnoreCase(name)) {
+	            comprehensive += 300;
+	        }
+	    }
+
+	    double total = liability + collision + comprehensive;
+
+	    return new PricingResponseDto(liability, collision, comprehensive, total);
+	}	
 }
